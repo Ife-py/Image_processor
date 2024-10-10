@@ -19,14 +19,39 @@ if($_SERVER["REQUEST_METHOD"]=="POST"){
             $imageName=$imageFiles['name'];
 
             $imageType=$imageFiles['type'];
+            $image_info=$imageFiles['tmp_name'];
 
+            $image_data=file_get_contents($image_info);
+            $imageResource=imagecreatefromstring($image_data);
             if(in_array($imageType,array('image/jpeg','image/png','image/gif'))){
                 // moving the image to a directory
                 $uploadDir='uploads/';
                 $uploadfile=$uploadDir.$imageName;
                 move_uploaded_file($imageFiles['tmp_name'], $uploadfile);
+                // resizing the image
                 
-                $images='<img src="'.$uploadfile .'"width=800"height="600" alt=" '. $imageName . ' ">'; 
+                $imageWidth=imagesx($imageResource);
+                $imageheight=imagesy($imageResource);
+                // array containing size for different size
+                $sizes=array(
+                    'pc'=>array('width'=>700,'height'=>500),
+                    'pc_thumbnail'=>array('width'=>200,'height'=>180),
+                    'tablet'=>array('width'=>500,'height'=>300),
+                    'tablet_thumbnail'=>array('width'=>160,'height'=>80),
+                    'mobile_device'=>array('width'=>400,'height'=>200),
+                    'mobile_device_thumbnail'=>array('width'=>100,'height'=>50),
+                );
+                
+                
+                foreach($sizes as $sizeName=>$sizeDimensions){
+                    $width=$sizeDimensions['width'];
+                    $height=$sizeDimensions['height'];
+                    $newImageResource=imagecreatetruecolor($width,$height);
+                    imagecopyresampled($newImageResource,$imageResource,0,0,0,0,$width,$height,$imageWidth,$imageheight);
+                    
+                    $imagepath='uploads/resized_'.$sizeName.$imageName;
+                    imagejpeg($newImageResource,$imagepath,90);
+                } 
             }else{
                 echo'Invalid image file type';
             }
@@ -67,25 +92,35 @@ if($_SERVER["REQUEST_METHOD"]=="POST"){
             <div class="col-md-6">
                 <p><b>Screensize images for Pc</b></p>
                 <?php 
-                    echo '<img src="' . $uploadfile . '"width=700"height=500" class="img-thumbnail" alt="' . $imageName . '">';
+                    $sizeName='pc';
+                    $resizedImage='uploads/resized_'.$sizeName.$imageName;
+                    echo '<img src="' . $resizedImage . '"class="img-thumbnail" alt="' . $imageName . '">';
                 ?>
                 <?php 
+                    $sizeName='pc_thumbnail';
+                    $resizedImage='uploads/resized_'.$sizeName.$imageName;
+                                    
                     $start=1;
                     $end=3;
                     for($i=$start;$i<=$end;$i++){
-                        echo '<img src="' . $uploadfile . '"width=200"height=180" class="img-thumbnail" alt="' . $imageName . '">';
+                        echo '<img src="' . $resizedImage .'"alt="'. $imageName . '"class="img-thumbnail">';
                     }
                 ?>
             </div>
             <div class="col-md-6">
                 <p><b>Screensize images for Tablet</b></p>
-                 <?php 
-                    echo '<img src="' . $uploadfile . '"width=500"height=300" class="img-thumbnail" alt="' . $imageName . '">';
+                 <?php
+                    $sizeName='tablet';
+                    $resizedImage='uploads/resized_'.$sizeName.$imageName;
+                    echo '<img src="' . $resizedImage . '"class="img-thumbnail" alt="' . $imageName . '">';
+                    ?>
+                <?php
+                    $sizeName='tablet_thumbnail';
+                    $resizedImage='uploads/resized_'.$sizeName.$imageName;
                     $start=1;
                     $end=3;
                     for($i=$start;$i<=$end;$i++){
-                        echo '<img src="' . $uploadfile . '"width=160"height=8
-                        0" class="img-thumbnail" alt="' . $imageName . '">';
+                        echo '<img src="' . $resizedImage . '"class="img-thumbnail" alt="' . $imageName . '">';
                     }
                 ?>
             </div>
@@ -96,11 +131,15 @@ if($_SERVER["REQUEST_METHOD"]=="POST"){
             <div class="col-md-4">
                 <p><b>Screensize for mobile devices</b></p>
                 <?php 
-                    echo '<img src="' . $uploadfile . '"width=400"height=200" class="img-thumbnail" alt="' . $imageName . '">';
+                    $sizeName='mobile_device';
+                    $resizedImage='uploads/resized_'.$sizeName.$imageName;
+                    echo '<img src="' . $resizedImage . '"class="img-thumbnail" alt="' . $imageName . '">';
+                    $sizeName='mobile_device_thumbnail';
+                    $resizedImage='uploads/resized_'.$sizeName.$imageName;
                     $start=1;
                     $end=3;
                     for($i=$start;$i<=$end;$i++){
-                        echo '<img src="' . $uploadfile . '"width=100"height=" class="img-thumbnail" alt="' . $imageName . '">';
+                        echo '<img src="' . $resizedImage . '"class="img-thumbnail" alt="' . $imageName . '">';
                     }
                 ?>
             </div>
