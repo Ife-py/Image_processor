@@ -15,7 +15,7 @@
                     <div class="card">
                         <div class="card-header bg-primary"><b>Welcome to this image processing page</b></div>
                         <div class="card-body">
-                            <form action="image_processor.php" method="post" enctype="multipart/form-data">
+                            <form action="db.php" method="post" enctype="multipart/form-data">
                                 <div class="form-group">
                                     <label for="formFile" class="form-label mt-4">Upload a picture:</label>
                                     <input class="form-control" type="file" id="formFile" name="image">
