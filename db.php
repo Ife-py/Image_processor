@@ -2,7 +2,7 @@
 try{
     $db=new PDO("mysql:host=localhost;dbname=image_processor","root","");
     $db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
-    echo "Connected";
+    // echo "Connected";
 }catch(Exception $e){
     echo 'ERROR: '.$e->getMessage();
     exit;
@@ -10,6 +10,10 @@ try{
 
 ?>
 <?php 
+if($_SERVER["REQUEST_METHOD"]!="POST"){
+    header('location:index.php');
+    exit;
+}
 if($_SERVER['REQUEST_METHOD']=='POST'){
     if(isset($_FILES['image'])&&$_FILES['image']['error']==0){
         $image=$_FILES['image'];
@@ -65,22 +69,23 @@ if($_SERVER['REQUEST_METHOD']=='POST'){
 
                 // Save the resized image
                 $uploadDir = 'uploads/';
-                $resizedImagePath = $uploadDir .$size['device_type']. 'resized_' . $image_name;
+                $resizedImagePath = $uploadDir .$size['device_type']. 'resized_' . $size['image_type'];
                 imagejpeg($newImage, $resizedImagePath, 90); // Save as JPEG with quality 90
 
                 // Update the database with the resized image path
-                $stmt = $db->prepare("INSERT INTO resized_images(image_id,size_name,resized_image_path)values(:imageId,:size_name,:resized_image_path");
-                $stmt->bindParam(':image_id', $imageId);
-                $stmt->bindParam(':size_name', $size['device_type']);
+                $stmt = $db->prepare("INSERT INTO resized_images(image_id,size_name,resized_image_path)values(:imageId,:size_name,:resized_image_path)");
+                $stmt->bindParam(':imageId', $imageId);
+                $stmt->bindParam(':size_name', $size['image_type']);
                 $stmt->bindParam(':resized_image_path', $resizedImagePath);
                 $stmt->execute();
 
                 // Free memory
-                imagedestroy($srcImage);
+                imagedestroy($newImage);
+                
             }
-            imagedestroy($newImage);
+            imagedestroy($srcImage);
 
-            echo "Image uploaded and resized successfully!";
+            // echo "Image uploaded and resized successfully!";
         } else {
             echo "Invalid image type. Only JPG, PNG, and GIF are allowed.";
         }
@@ -89,19 +94,39 @@ if($_SERVER['REQUEST_METHOD']=='POST'){
     }
     
     $stmt = $db->prepare("SELECT * FROM resized_images WHERE image_id=:imageId");
-    $stmt->bindParam('image_id',$imageId);
+    $stmt->bindParam('imageId',$imageId);
 
     $stmt->execute();
     $resized_images=$stmt->fetchAll(PDO::FETCH_ASSOC);
 
+    
     // Display the resized image
-    if ($resizedImages) {
-        foreach($resizedImages as $image){
-            echo '<img src="' . $image['resized_image_path'] . '" alt="Resized Image">';
+    // if ($resized_images) {
+    //     foreach($resized_images as $image){
+    //         echo '<img src="' . $image['resized_image_path'] . '" alt="Resized Image" class="img-thumbnail">';
+    //     }
+    // } else {
+    //     echo "No image found!";
+    // }
+}
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style/bootstrap.css">
+</head>
+<body>
+    <?php
+    if ($resized_images) {
+        foreach($resized_images as $image){
+            echo '<img src="' . $image['resized_image_path'] . '" alt="Resized Image" class="img-thumbnail">';
         }
     } else {
         echo "No image found!";
     }
-}
-
-?>
+    ?>
+</body>
+</html>
